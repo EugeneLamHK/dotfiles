@@ -1,0 +1,136 @@
+@define-color foreground #eeeeee;
+@define-color foreground-inactive #aaaaaa;
+@define-color background rgba(16, 16, 16, 0.5);
+
+* {
+    font-family: JetBrainsMono Nerd Font, "Noto Sans CJK JP";
+    font-size: 14px;
+    padding: 0;
+    margin: 0;
+}
+
+#waybar {
+    color: @foreground;
+    background-color: @background;
+    border: none;
+}
+
+/* Workspace styling */
+#workspaces button {
+    color: rgba(255, 255, 255, 0.4);
+    background: none;
+    border: none;
+    padding: 0 8px;
+    font-size: 13px;
+}
+
+#workspaces button:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+#workspaces button.active {
+    color: #ffffff;
+    background: none;
+    border: none;
+}
+
+/* Arch logo image — white + tight padding to VPN */
+#image {
+    padding: 0 0px 0 15px;
+    background: none;
+    border: none;
+}
+
+#image:hover {
+    background: rgba(23, 147, 209, 0.1);
+}
+
+/* VPN — pulled closer to Arch logo */
+#custom-vpn {
+    padding: 0 10px 0 0px;
+    color: #56b6c2;
+    background: none;
+    border: none;
+    font-weight: bold;
+}
+
+#custom-vpn:hover {
+    background: rgba(86, 182, 194, 0.1);
+}
+
+/* Right side modules */
+
+
+
+
+
+
+
+
+/* Brightness color coding */
+#custom-brightness {
+    padding: 0 10px;
+    background: none;
+    border: none;
+}
+
+#custom-brightness.brightness-100 {
+    color: #f1c40f;
+}
+
+#custom-brightness.brightness-75 {
+    color: #e67e22;
+}
+
+#custom-brightness.brightness-50 {
+    color: #e91e63;
+}
+
+#custom-brightness.brightness-25,
+#custom-brightness.brightness-low {
+    color: #e74c3c;
+}
+
+#custom-brightness.error {
+    color: #95a5a6;
+}
+
+#custom-brightness:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Day of week styling */
+#custom-day-of-week {
+    padding: 0 10px;
+    color: #bb9af7;
+    background: none;
+    border: none;
+    font-weight: bold;
+}
+
+#custom-day-of-week:hover {
+    background: rgba(187, 154, 247, 0.1);
+}
+
+#custom-battery {
+    padding: 0 10px;
+    color: #a6e3a1;
+    background: none;
+    border: none;
+}
+
+#custom-battery:hover {
+    background: rgba(166, 227, 161, 0.1);
+}
+
+/* Volume - white color */
+#custom-volume {
+    padding: 0 10px;
+    color: #ffffff;
+    background: none;
+    border: none;
+}
+
+#custom-volume:hover {
+    background: rgba(255, 255, 255, 0.1);
+}

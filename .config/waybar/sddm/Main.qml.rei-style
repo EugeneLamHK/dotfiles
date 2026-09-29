@@ -1,0 +1,366 @@
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as QQC2
+import QtQuick.Window
+import QtQuick.Effects
+import SddmComponents
+import "."
+
+Item {
+    id: root
+
+    ////////////////////////////////////////////
+    // REI-STYLE STATIC COLORS (from rei.conf)
+    ////////////////////////////////////////////
+
+    readonly property color reiPrimary:       "#C3C6FB"
+    readonly property color reiBg:            "#000000"
+    readonly property color reiContent:       "#C3C6FB"
+    readonly property color reiActiveBg:      "#C3C6FB"
+    readonly property color reiActiveContent: "#000000"
+    readonly property color reiBorder:        "#C3C6FB"
+    readonly property color reiWarning:       "#FFFFFF"
+
+    // Load the matugen file (kept for compatibility)
+    Matugen {
+        id: matugenTheme
+    }
+
+    // Global Properties
+    readonly property string backgroundImageSource: "assets/background"
+    readonly property real backgroundImageBlur:     0.5
+
+    readonly property color secondaryMonitorBgColor: Qt.rgba(0, 0, 0, 1)
+    readonly property string secondaryMonitorQuote:  ""
+
+    readonly property string timeFormat: "hh:mm"
+    readonly property string dateFormat: "dddd, d MMM"
+
+    readonly property int fontSizeTime:  Screen.height * 0.11
+    readonly property int fontSizeDate:  fontSizeTime / 2
+
+    readonly property int fontSizeBase:  Screen.height * 0.015
+    readonly property int fontSizeLarge: fontSizeBase * 2
+    readonly property int fontSizeHuge:  fontSizeBase * 3
+
+    FontLoader {
+        id: fontMain
+        source: "assets/RedHatDisplay.ttf"
+    }
+
+    readonly property string fontFamilyBase:  fontMain.name || "Inter"
+    readonly property string fontFamilyAlt:   fontMain.name || "Inter"
+    readonly property string fontFamilyFancy: fontMain.name || "Inter"
+
+    // Override matugen colors with rei blue palette
+    readonly property color fontColorBase:   reiContent
+    readonly property color fontColorHover:  reiActiveContent
+    readonly property color fontColorSplash: reiContent
+
+    readonly property color backgroundBase:     reiPrimary
+    readonly property color passwordInputColor: reiBg
+    readonly property color borderBase:         reiBorder
+    readonly property color shadowBase:         reiBg
+
+    readonly property int borderWidthBase: 2
+    readonly property int radiusBase:      10
+
+    readonly property real componentHeight:  0.05
+    readonly property real componentWidth:   0.15
+    readonly property real topBorderMargin:  0.03
+    readonly property real leftBorderMargin: 0.03
+
+    readonly property int shadowBlur:   10
+    readonly property int shadowOffset: 5
+
+    ////////////////////////////////////////////
+    // LOGICS
+    ////////////////////////////////////////////
+
+    property int currentUserIndex:    0
+    property int currentSessionIndex: 0
+    property bool userPopupOpen:      false
+    property bool sessionPopupOpen:   false
+    property bool powerMenuOpen:      false 
+
+    Connections {
+        target: sddm
+        function onLoginFailed() { 
+            passwordInput.text = ""; 
+            shakeAnimation.restart();
+        }
+    }
+
+    QQC2.ComboBox {
+        id: userSelector
+        visible:      false
+        model:        userModel
+        textRole:     "name"
+        currentIndex: root.currentUserIndex
+    }
+
+    QQC2.ComboBox {
+        id: sessionSelector
+        visible:      false
+        model:        sessionModel
+        textRole:     "name"
+        currentIndex: root.currentSessionIndex
+    }
+
+    function attemptLogin() {
+        if (userModel.count === 0) return;
+        const selectedUser = userSelector.currentIndex;
+        const selectedSession = sessionSelector.currentIndex;
+
+        if (selectedUser < 0 || selectedSession < 0) return;
+
+        const username = (typeof userModel.get === "function") ? userModel.get(selectedUser).name : userSelector.currentText;
+        sddm.login(username, passwordInput.text, selectedSession);
+    }
+
+    Component.onCompleted: {
+        const lastSessionIndex = sessionModel.lastIndex;
+        currentSessionIndex = (lastSessionIndex && lastSessionIndex < sessionModel.count) ? lastSessionIndex : 0
+
+        const lastUserIndex = userModel.lastIndex;
+        currentUserIndex = (lastUserIndex && lastUserIndex < userModel.count) ? lastUserIndex : 0
+    }
+
+    ////////////////////////////////////////////
+    // VISUAL
+    ////////////////////////////////////////////
+
+    // Background Image
+    Image {
+        id: backgroundImage
+        anchors.fill: parent
+        z: 0
+        fillMode: Image.PreserveAspectCrop
+        source:   backgroundImageSource
+        visible:  primaryScreen
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            blurEnabled: true
+            blurMax:     64
+            blur:        backgroundImageBlur
+        }
+    }
+
+    // Dismiss open menus when clicked anywhere else
+    MouseArea {
+        anchors.fill: parent
+        onClicked: {
+            root.sessionPopupOpen = false;
+            root.userPopupOpen    = false;
+            root.powerMenuOpen   = false;
+            if (primaryScreen) passwordInput.forceActiveFocus();
+        }
+    }
+
+    // HIDDEN ELEMENTS (rei-style is minimal)
+    Column {
+        id: clockContainer
+        visible: false
+        anchors.top: parent.top
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.topMargin: Screen.height * topBorderMargin
+        spacing: 8
+        Text { text: "" }
+    }
+
+    Rectangle {
+        id: sessionContainer
+        visible: false
+        anchors.top: parent.top
+        anchors.left: parent.left
+        width: 1; height: 1; color: "transparent"
+    }
+
+    Rectangle {
+        id: powerControlsPill
+        visible: false
+        anchors.top: parent.top
+        anchors.right: parent.right
+        width: 1; height: 1; color: "transparent"
+    }
+
+    // LOGIN AREA - Left aligned (rei style)
+    Column {
+        id: loginArea
+        visible: primaryScreen
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.leftMargin: 50
+        spacing: 15
+
+        // Avatar
+        Rectangle {
+            id: avatarContainer
+            width: 120
+            height: 120
+            radius: 30
+            color: reiBg
+            border.color: reiBorder
+            border.width: 3
+            visible: userModel.count > 0
+
+            Image {
+                anchors.fill: parent
+                anchors.margins: 3
+                source: "assets/avatar.png"
+                fillMode: Image.PreserveAspectCrop
+                visible: source !== "" && source !== undefined
+            }
+        }
+
+        // Username
+        Text {
+            id: usernameText
+            text: userSelector.currentText ? (userSelector.currentText.charAt(0).toUpperCase() + userSelector.currentText.slice(1)) : "User"
+            color: reiContent
+            font.pixelSize: 16
+            font.weight: Font.Bold
+            font.family: fontFamilyBase
+        }
+
+        // Password + Login Button Row
+        Row {
+            spacing: 5
+
+            // Password Input (rei style)
+            Rectangle {
+                id: passwordContainer
+                width: 200
+                height: 30
+                radius: 10
+                color: reiBg
+                border.color: reiBorder
+                border.width: 2
+                opacity: 0.9
+
+                // The Shake & Flash Animation
+                SequentialAnimation {
+                    id: shakeAnimation
+                    PropertyAction { 
+                        target:   passwordContainer
+                        property: "border.color"
+                        value:    "red" 
+                    }
+                    NumberAnimation { target: passwordContainer; property: "anchors.horizontalCenterOffset"; from: 0; to: -12; duration: 100 }
+                    NumberAnimation { target: passwordContainer; property: "anchors.horizontalCenterOffset"; from: -12; to: 12; duration: 100 }
+                    NumberAnimation { target: passwordContainer; property: "anchors.horizontalCenterOffset"; from: 12; to: -12; duration: 100 }
+                    NumberAnimation { target: passwordContainer; property: "anchors.horizontalCenterOffset"; from: -12; to: 12; duration: 100 }
+                    NumberAnimation { target: passwordContainer; property: "anchors.horizontalCenterOffset"; from: 12; to: 0; duration: 100 }
+                    ColorAnimation { 
+                        target:   passwordContainer
+                        property: "border.color"
+                        to:       reiBorder
+                        duration: 500
+                    }
+                }
+
+                TextInput {
+                    id: passwordInput
+                    anchors.fill: parent
+                    horizontalAlignment: TextInput.AlignHCenter
+                    verticalAlignment: TextInput.AlignVCenter
+                    leftPadding: 16
+                    rightPadding: 16
+                    selectByMouse: true
+                    echoMode: TextInput.Password
+                    color: reiContent
+                    font.pixelSize: 12
+                    font.family: fontFamilyBase
+                    focus: true
+                    Keys.onReturnPressed: attemptLogin()
+                    Keys.onEnterPressed: attemptLogin()
+                    Keys.onTabPressed: function(event) {
+                        if (userModel.count > 0) {
+                            root.currentUserIndex = (root.currentUserIndex + 1) % userModel.count;
+                        }
+                        event.accepted = true;
+                    }
+                    Keys.onBacktabPressed: function(event) {
+                        if (sessionModel.count > 0) {
+                            root.currentSessionIndex = (root.currentSessionIndex + 1) % sessionModel.count;
+                        }
+                        event.accepted = true;
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "Password"
+                    color: reiContent
+                    font.pixelSize: 12
+                    font.family: fontFamilyBase
+                    visible: !passwordInput.activeFocus && passwordInput.text.length === 0
+                    opacity: 0.5
+                }
+            }
+
+            // Login Button (rei style - small icon button)
+            Rectangle {
+                id: submitButton
+                width: 30
+                height: 30
+                radius: 10
+                color: reiBg
+                border.color: reiBorder
+                border.width: 2
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "→"
+                    color: reiContent
+                    font.pixelSize: 18
+                    font.family: fontFamilyBase
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: attemptLogin()
+                }
+            }
+        }
+
+        // Warning Message (Caps Lock, etc)
+        Text {
+            id: warningMessage
+            text: ""
+            color: reiWarning
+            font.pixelSize: 11
+            font.family: fontFamilyBase
+        }
+    }
+
+    // Hidden user popup (functional but invisible - we use direct login)
+    Rectangle {
+        id: userPopup
+        visible: false
+        width: 1; height: 1; color: "transparent"
+    }
+
+    // Hidden session popup
+    Rectangle {
+        id: sessionPopup
+        visible: false
+        width: 1; height: 1; color: "transparent"
+    }
+
+    // SECONDARY MONITOR
+    Rectangle {
+        anchors.fill: parent
+        color: secondaryMonitorBgColor
+        visible: !primaryScreen
+        Text {
+            text: secondaryMonitorQuote
+            anchors.centerIn: parent
+            font.pixelSize: Screen.height * 0.1
+            font.family: fontFamilyBase
+            color: fontColorBase
+        }
+    }
+}

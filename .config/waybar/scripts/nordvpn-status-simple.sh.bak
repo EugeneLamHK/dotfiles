@@ -1,0 +1,41 @@
+#!/bin/bash
+# ── vpn-status-simple.sh ──────────────────────────────────────────────────
+# Description: VPN status checker (ProtonVPN > NordVPN > generic fallback)
+# ───────────────────────────────────────────────────────────────────────────
+
+# 1. Try ProtonVPN first
+if command -v protonvpn-cli &> /dev/null; then
+    status=$(protonvpn-cli status 2>/dev/null | grep -i "status:" | awk '{print $2}')
+    if [[ "$status" == "Connected" ]]; then
+        server=$(protonvpn-cli status 2>/dev/null | grep -i "server:" | awk '{print $2}')
+        [[ -z "$server" ]] && server="ON"
+        echo "<span foreground='#a6e3a1'>[VPN]: $server</span>"
+        exit 0
+    else
+        echo "<span foreground='#f38ba8'>[VPN]: OFF</span>"
+        exit 0
+    fi
+fi
+
+# 2. Try NordVPN
+if command -v nordvpn &> /dev/null; then
+    status=$(nordvpn status 2>/dev/null | grep -i "Status:" | awk '{print $2}')
+    if [[ "$status" == "Connected" ]]; then
+        country=$(nordvpn status 2>/dev/null | grep "Country:" | awk '{print $2}')
+        [[ -z "$country" ]] && country="ON"
+        echo "<span foreground='#a6e3a1'>[VPN]: $country</span>"
+        exit 0
+    else
+        echo "<span foreground='#f38ba8'>[VPN]: OFF</span>"
+        exit 0
+    fi
+fi
+
+# 3. Fallback: generic VPN interface detection
+if ip route | grep -qE "tun|tap|wg|vpn" 2>/dev/null; then
+    country=$(curl -s --max-time 3 ifconfig.co/country 2>/dev/null)
+    [[ -z "$country" ]] && country="ACTIVE"
+    echo "<span foreground='#a6e3a1'>[VPN]: $country</span>"
+else
+    echo "<span foreground='#f38ba8'>[VPN]: OFF</span>"
+fi

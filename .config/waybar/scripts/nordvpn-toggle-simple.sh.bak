@@ -1,0 +1,41 @@
+#!/bin/bash
+# ── vpn-toggle-simple.sh ──────────────────────────────────────────────────
+# Description: Toggle VPN (ProtonVPN > NordVPN > network settings fallback)
+# ───────────────────────────────────────────────────────────────────────────
+
+# 1. Try ProtonVPN first
+if command -v protonvpn-cli &> /dev/null; then
+    status=$(protonvpn-cli status 2>/dev/null | grep -i "status:" | awk '{print $2}')
+    if [[ "$status" == "Connected" ]]; then
+        protonvpn-cli disconnect
+        notify-send "VPN" "Disconnected from ProtonVPN" -t 2000
+    else
+        protonvpn-cli connect
+        notify-send "VPN" "Connecting to ProtonVPN..." -t 2000
+    fi
+    exit 0
+fi
+
+# 2. Try NordVPN
+if command -v nordvpn &> /dev/null; then
+    status=$(nordvpn status 2>/dev/null | grep -i "Status:" | awk '{print $2}')
+    if [[ "$status" == "Connected" ]]; then
+        nordvpn disconnect
+        notify-send "VPN" "Disconnected from NordVPN" -t 2000
+    else
+        nordvpn connect
+        notify-send "VPN" "Connecting to NordVPN..." -t 2000
+    fi
+    exit 0
+fi
+
+# 3. Fallback: open network settings
+if command -v nm-connection-editor &> /dev/null; then
+    nm-connection-editor &
+elif command -v gnome-control-center &> /dev/null; then
+    gnome-control-center network &
+elif command -v systemsettings5 &> /dev/null; then
+    systemsettings5 kcm_networkmanagement &
+else
+    notify-send "VPN" "No VPN client found. Install ProtonVPN or NordVPN CLI." -t 3000
+fi

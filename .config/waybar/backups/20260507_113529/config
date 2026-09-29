@@ -1,0 +1,91 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 30,
+    "spacing": 20,
+
+    "modules-left": ["image", "custom/vpn"],
+    "modules-center": ["hyprland/workspaces"],
+    "modules-right": ["custom/brightness", "custom/day-of-week", "custom/battery", "custom/volume"],
+
+    "hyprland/workspaces": {
+        "format": "<span size='larger'>{icon}</span>",
+        "on-click": "activate",
+        "format-icons": {
+           "1": "ひ",
+           "2": "ら",
+           "3": "や",
+           "4": "す",
+           "5": "み"
+        },
+        "sort-by-number": true,
+        "persistent-workspaces": {
+            "1": [],
+            "2": [],
+            "3": [],
+            "4": [],
+            "5": []
+        }
+    },
+
+    "image": {
+        "path": "/home/eugene/.config/waybar/icons/arch-white.png",
+        "size": 18
+    },
+
+    "custom/vpn": {
+        "exec": "~/.config/waybar/scripts/nordvpn-status-simple.sh",
+        "interval": 5,
+        "format": "{}",
+        "tooltip": true,
+        "tooltip-format": "Click to toggle VPN connection or open network settings",
+        "on-click": "~/.config/waybar/scripts/nordvpn-toggle-simple.sh"
+    },
+
+    "custom/power-mode": {
+        "exec": "~/.config/waybar/scripts/power_mode_status.sh",
+        "return-type": "json",
+        "interval": 5,
+        "format": "{}",
+        "tooltip": true,
+        "on-click": "~/.config/waybar/scripts/power_mode_toggle.sh"
+    },
+
+    "custom/brightness": {
+        "exec": "~/.config/waybar/scripts/brightness_icon.sh",
+        "return-type": "json",
+        "interval": 2,
+        "format": "{}",
+        "tooltip": true,
+        "on-click": "~/.config/waybar/scripts/brightness-toggle.sh",
+        "on-scroll-up": "brightnessctl set +5%",
+        "on-scroll-down": "brightnessctl set 5%-"
+    },
+
+    "custom/battery": {
+        "exec": "~/.config/waybar/scripts/battery_icon.sh",
+        "interval": 10,
+        "format": "{}",
+        "tooltip": true,
+        "tooltip-format": "Battery Status"
+    },
+
+    "custom/volume": {
+        "exec": "~/.config/waybar/scripts/volume_icon.sh",
+        "interval": 2,
+        "format": "{}",
+        "tooltip": true,
+        "tooltip-format": "Volume - Click to mute/unmute, Scroll to adjust",
+        "on-click": "~/.config/waybar/scripts/volume-toggle.sh",
+        "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +5% || amixer set Master 5%+",
+        "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -5% || amixer set Master 5%-"
+    },
+   
+    "custom/day-of-week": {
+        "exec": "~/.config/waybar/scripts/day_of_week.sh",
+        "interval": 60,
+        "format": "{}",
+        "tooltip": true,
+        "tooltip-format": "Day of Week"
+    }
+}
