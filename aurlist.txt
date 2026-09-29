@@ -1,0 +1,10 @@
+alass
+gnome-network-displays
+litehtml0.9
+mecab-git
+mecab-ipadic
+memento
+minecraft-launcher
+neofetch
+python-pywal16-git
+zoom
