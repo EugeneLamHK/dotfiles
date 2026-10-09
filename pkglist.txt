@@ -244,3 +244,4 @@ yt-dlp
 zen-browser-bin
 zettlr
 zoom
+imagemagick

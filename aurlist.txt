@@ -8,3 +8,8 @@ minecraft-launcher
 neofetch
 python-pywal16-git
 zoom
+sddm-sugar-candy-git
+zen-browser-bin
+awww
+quickshell
+matugen
