@@ -1,0 +1,56 @@
+[config.wallpaper]
+command = "material"
+set = false
+
+[templates.hyprland]
+input_path = '~/.config/matugen/templates/hyprland-colors.lua'
+output_path = '~/.config/hypr/colors.lua'
+
+[templates.kitty]
+input_path = '~/.config/matugen/templates/kitty-colors.conf'
+output_path = '~/.config/kitty/colors-matugen.conf'
+
+[templates.rmpc]
+input_path = '~/.config/matugen/templates/rmpc-theme.ron'
+output_path = '~/.config/rmpc/themes/custom.ron'
+
+[templates.alacritty]
+input_path = '~/.config/matugen/templates/alacritty-colors.toml'
+output_path = '~/.config/alacritty/colors.toml'
+
+[templates.ghostty]
+input_path = '~/.config/matugen/templates/ghostty-colors'
+output_path = '~/.config/ghostty/colors'
+
+[templates.rofi]
+input_path = '~/.config/matugen/templates/rofi-theme.rasi'
+output_path = '~/.config/rofi/theme.rasi'
+
+[templates.quickshell]
+input_path = '~/.config/matugen/templates/qs_colors.json.template'
+output_path = '~/.config/hypr/scripts/quickshell/qs_colors.json'
+
+[templates.vivaldi]
+input_path = '~/.config/matugen/templates/vivaldi.css'
+output_path = '~/.config/vivaldi/custom/vivaldi.css'
+
+[templates.searxng]
+input_path = '~/.config/matugen/templates/searxng.css'
+output_path = '~/.cache/matugen/searxng.css'
+
+[templates.gtk4]
+input_path = '~/.config/matugen/templates/gtk4-css.css'
+output_path = '~/.config/gtk-4.0/gtk.css'
+
+[templates.gtk3]
+input_path = '~/.config/matugen/templates/gtk3-css.css'
+output_path = '~/.config/gtk-3.0/gtk.css'
+
+[templates.cursor]
+input_path = '~/.config/matugen/templates/cursors.json'
+output_path = '~/.config/colors.json'
+post_hook = '~/.config/matugen/post-hook-scripts/cursor_matugen.sh'
+
+[templates.hyprlock]
+input_path = "~/.config/matugen/templates/hyprlock.conf"
+output_path = "~/.config/hypr/hyprlock.conf"

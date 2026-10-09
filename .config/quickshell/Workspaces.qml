@@ -1,60 +1,60 @@
-import QtQuick
-import QtQuick.Layouts
+// Workspaces.qml — Hyprland workspaces row with hiragana labels.
+// Event-driven via Quickshell.Hyprland (no polling).
+import Quickshell
 import Quickshell.Hyprland
-import Quickshell.Io
-import "root:/" as Root
+import QtQuick
 
-RowLayout {
-    spacing: 0
+Row {
+    id: root
+    spacing: 4
 
-    Process {
-        id: wsDispatcher
-        property int targetWs: 0
-        command: ["/bin/bash", "-c", "hyprctl dispatch workspace " + targetWs]
-    }
+    // Hiragana labels (user's rice: ひ ら や す み)
+    readonly property var labels: ["ひ", "ら", "や", "す", "み"]
 
     Repeater {
-        model: 5
+        model: labels.length
 
         Rectangle {
-            id: wsRect
-            property int wsId: index + 1
-            property var wsObj: Hyprland.workspaces.values.find(w => w.id === wsId)
-            property bool isActive: Hyprland.focusedWorkspace?.id === wsId
-            property bool exists: wsObj !== undefined
+            id: ws
+            required property int index
+            readonly property int wsId: index + 1
+            readonly property HyprlandWorkspace workspace: {
+                const list = Hyprland.workspaces.values;
+                for (let i = 0; i < list.length; i++)
+                    if (list[i].id === wsId) return list[i];
+                return null;
+            }
+            readonly property bool active: Hyprland.focusedWorkspace !== null
+                && Hyprland.focusedWorkspace.id === wsId
+            readonly property bool occupied: workspace !== null
+            readonly property bool hovered: area.containsMouse
 
-            implicitWidth: wsText.implicitWidth + 16
-            implicitHeight: 30
-            color: "transparent"
-            radius: 0
+            width: 20
+            height: 20
+            radius: 10
+            color: hovered
+                ? Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.12)
+                : "transparent"
+            Behavior on color { ColorAnimation { duration: 150 } }
 
             Text {
-                id: wsText
                 anchors.centerIn: parent
-                text: ["ひ", "ら", "や", "す", "み"][index]
-                color: wsRect.isActive
-                    ? Root.Colors.workspaceActive
-                    : Root.Colors.workspaceInactive
+                text: root.labels[ws.index]
                 font.family: "Noto Sans CJK JP"
-                font.pixelSize: Root.Colors.fontSizeWorkspace
+                font.pixelSize: 13
+                font.bold: ws.active
+                color: ws.active
+                    ? "#ffffff"
+                    : (ws.occupied ? Colors.workspaceOccupied : Colors.workspaceEmpty)
+                Behavior on color { ColorAnimation { duration: 150 } }
             }
 
             MouseArea {
+                id: area
                 anchors.fill: parent
                 hoverEnabled: true
-                onEntered: {
-                    if (!wsRect.isActive)
-                        wsText.color = Root.Colors.workspaceHover
-                }
-                onExited: {
-                    wsText.color = wsRect.isActive
-                        ? Root.Colors.workspaceActive
-                        : Root.Colors.workspaceInactive
-                }
-                onClicked: {
-                    wsDispatcher.targetWs = wsRect.wsId
-                    wsDispatcher.running = true
-                }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: Hyprland.dispatch("workspace " + ws.wsId)
             }
         }
     }

@@ -1,13 +1,10 @@
 module quickshell
 singleton Colors 1.0 Colors.qml
-ArchIcon 1.0 ArchIcon.qml
-VPN 1.0 VPN.qml
-Workspaces 1.0 Workspaces.qml
-Launcher 1.0 Launcher.qml
-Battery 1.0 Battery.qml
-Volume 1.0 Volume.qml
-Brightness 1.0 Brightness.qml
-DayOfWeek 1.0 DayOfWeek.qml
-ScriptModule 1.0 ScriptModule.qml
-MediaPlayer 1.0 MediaPlayer.qml
 Bar 1.0 Bar.qml
+Clock 1.0 Clock.qml
+BatteryBar 1.0 BatteryBar.qml
+VPNPill 1.0 VPNPill.qml
+VPNIcon 1.0 VPNIcon.qml
+Workspaces 1.0 Workspaces.qml
+MediaPlayer 1.0 MediaPlayer.qml
+Launcher 1.0 Launcher.qml

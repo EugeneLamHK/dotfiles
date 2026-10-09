@@ -1,210 +1,125 @@
-import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls as QQC
-import QtQuick.Window
+// MediaPlayer.qml — floating MPRIS media player popup.
+// FIX (v2): updateTimer previously kept running after the window auto-closed.
+// The Scope now stops it whenever the window hides (see onVisibleChanged).
 import Quickshell
-import Quickshell.Io
-import "root:/" as Root
+import Quickshell.Services.Mpris
+import QtQuick
 
 Scope {
-    id: mpdRoot
+    id: root
 
-    property bool visible: false
-    property var track: ({ title: "", artist: "", album: "", art: "", status: "stopped", elapsed: 0, duration: 1, pct: 0 })
+    // Mirrors the popup's visibility so the fix below can react declaratively.
+    readonly property bool visible: win.visible
 
-    function toggle() {
-        visible = !visible
-        if (visible) {
-            updateTimer.running = true
-            updateTrack()
-        }
+    readonly property MprisPlayer player: {
+        const players = Mpris.players.values;
+        for (let i = 0; i < players.length; i++)
+            if (players[i].isPlaying) return players[i];
+        return players.length > 0 ? players[0] : null;
     }
 
-    IpcHandler {
-        target: "mediaplayer"
-        function toggle(): void { mpdRoot.toggle() }
-    }
-
-    function updateTrack() {
-        infoProc.running = true
-    }
-
-    function mpc(cmd) {
-        controlProc.command = ["/bin/bash", "-c", "mpc " + cmd]
-        controlProc.running = true
-    }
-
-    Process {
-        id: infoProc
-        command: ["python3", "/home/eugene/.config/quickshell/scripts/mpd_info.py"]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    mpdRoot.track = JSON.parse(this.text.trim())
-                } catch(e) {}
-            }
-        }
-    }
-
-    Process {
-        id: controlProc
-        command: []
-    }
-
+    // 1s timer that refreshes the progress bar while the popup is open.
+    property real position: 0
     Timer {
         id: updateTimer
         interval: 1000
-        running: false
         repeat: true
-        onTriggered: updateTrack()
+        running: false // started/stopped by root.onVisibleChanged below
+        onTriggered: root.position = root.player ? root.player.position : 0
     }
 
-    Window {
-        id: win
-        title: "Media Player"
-        visible: mpdRoot.visible
-        width: 420
-        height: 220
-        flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool | Qt.NoDropShadowWindowHint
-        color: "transparent"
+    // Auto-close a few seconds after playback stops / popup goes idle.
+    Timer {
+        id: hideTimer
+        interval: 8000
+        onTriggered: win.visible = false
+    }
 
-        onActiveChanged: {
-            if (!active && mpdRoot.visible) {
-                closeTimer.restart()
-            } else {
-                closeTimer.stop()
+    Connections {
+        target: root.player
+        function onPlaybackStateChanged() {
+            if (root.player && root.player.isPlaying) {
+                win.visible = true;
+                hideTimer.restart();
             }
         }
+    }
 
-        Timer {
-            id: closeTimer
-            interval: 300
-            onTriggered: mpdRoot.visible = false
+    PanelWindow {
+        id: win
+        visible: false
+        anchors {
+            top: true
+            right: true
         }
+        margins {
+            top: 52
+            right: 12
+        }
+        implicitWidth: 340
+        implicitHeight: 96
+        color: "transparent"
+        exclusiveZone: 0
 
         Rectangle {
             anchors.fill: parent
-            color: Root.Colors.barBackground
-            border.color: Root.Colors.accent
-            border.width: 1
-            radius: 8
+            radius: 16
+            color: Colors.barBackground
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 16
+            Column {
+                anchors {
+                    fill: parent
+                    margins: 14
+                }
+                spacing: 8
 
-                Rectangle {
-                    Layout.preferredWidth: 140
-                    Layout.preferredHeight: 140
-                    Layout.alignment: Qt.AlignVCenter
-                    color: Root.Colors.surface
-                    radius: 4
-
-                    Image {
-                        anchors.fill: parent
-                        anchors.margins: 4
-                        source: mpdRoot.track.art ? "file://" + mpdRoot.track.art : ""
-                        fillMode: Image.PreserveAspectCrop
-                        visible: status === Image.Ready && mpdRoot.track.art
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "♪"
-                        color: Root.Colors.foregroundInactive
-                        font.pixelSize: 48
-                        visible: !parent.children[0].visible
-                    }
+                Text {
+                    text: root.player ? (root.player.trackTitle || "Unknown title") : "Nothing playing"
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 13
+                    font.bold: true
+                    color: Colors.text
+                    elide: Text.ElideRight
+                    width: parent.width
                 }
 
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    spacing: 8
+                Text {
+                    text: root.player ? (root.player.trackArtist || "") : ""
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 11
+                    color: Colors.textDim
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
 
-                    Text {
-                        text: mpdRoot.track.title
-                        color: Root.Colors.foreground
-                        font.family: Root.Colors.fontFamily
-                        font.pixelSize: 14
-                        font.bold: true
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-
-                    Text {
-                        text: mpdRoot.track.artist + (mpdRoot.track.album ? " — " + mpdRoot.track.album : "")
-                        color: Root.Colors.foregroundInactive
-                        font.family: Root.Colors.fontFamily
-                        font.pixelSize: 11
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
+                // Progress bar
+                Rectangle {
+                    width: parent.width
+                    height: 5
+                    radius: 2.5
+                    color: Qt.rgba(Colors.text.r, Colors.text.g, Colors.text.b, 0.15)
 
                     Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 4
-                        color: Root.Colors.surface
-                        radius: 2
-
-                        Rectangle {
-                            width: parent.width * mpdRoot.track.pct
-                            height: parent.height
-                            color: Root.Colors.accent
-                            radius: 2
+                        anchors {
+                            left: parent.left
+                            top: parent.top
+                            bottom: parent.bottom
                         }
-                    }
-
-                    Text {
-                        text: {
-                            let e = mpdRoot.track.elapsed
-                            let d = mpdRoot.track.duration
-                            let fmt = (s) => Math.floor(s/60) + ":" + String(s%60).padStart(2,'0')
-                            return fmt(e) + " / " + fmt(d)
-                        }
-                        color: Root.Colors.textDim
-                        font.family: Root.Colors.fontFamily
-                        font.pixelSize: 9
-                    }
-
-                    RowLayout {
-                        Layout.alignment: Qt.AlignHCenter
-                        spacing: 20
-
-                        Text {
-                            text: "⏮"
-                            color: Root.Colors.foreground
-                            font.pixelSize: 18
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: mpdRoot.mpc("prev")
-                            }
-                        }
-
-                        Text {
-                            text: mpdRoot.track.status === "playing" ? "⏸" : "▶"
-                            color: Root.Colors.accent
-                            font.pixelSize: 22
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: mpdRoot.mpc("toggle")
-                            }
-                        }
-
-                        Text {
-                            text: "⏭"
-                            color: Root.Colors.foreground
-                            font.pixelSize: 18
-                            MouseArea {
-                                anchors.fill: parent
-                                onClicked: mpdRoot.mpc("next")
-                            }
-                        }
+                        readonly property real len: root.player ? root.player.length : 1
+                        width: len > 0 ? (root.position / len) * parent.width : 0
+                        radius: 2.5
+                        color: Colors.accent
                     }
                 }
             }
         }
+    }
+
+    // FIX: stop updateTimer when the popup hides (including auto-close),
+    // so it never burns CPU/battery in the background. The timer's `running`
+    // is managed entirely here (not bound), so this never kills a binding.
+    onVisibleChanged: {
+        if (!visible) updateTimer.running = false;
+        else { root.position = root.player ? root.player.position : 0; updateTimer.running = true; }
     }
 }

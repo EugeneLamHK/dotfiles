@@ -1,0 +1,45 @@
+:root {
+    --colorBg: {{colors.background.default.hex}} !important;
+    --colorFg: {{colors.on_background.default.hex}} !important;
+    --colorAccentBg: {{colors.primary.default.hex}} !important;
+    --colorAccentFg: {{colors.on_primary.default.hex}} !important;
+    --colorHighlightBg: {{colors.secondary.default.hex}} !important;
+    --colorHighlightFg: {{colors.on_secondary.default.hex}} !important;
+}
+
+#browser,
+#header,
+.toolbar-mainbar,
+.toolbar-tabbar,
+.tabbar-wrapper,
+.tab-position .tab,
+.panel,
+.vivaldi-settings,
+.UrlBar-AddressField,
+.addressfield,
+.mailbar,
+.bookmark-bar {
+    background-color: var(--colorBg) !important;
+    color: var(--colorFg) !important;
+}
+
+.tab-position .tab.active,
+.tab-position .tab.selected {
+    background-color: var(--colorAccentBg) !important;
+    color: var(--colorAccentFg) !important;
+}
+
+.UrlBar-AddressField,
+.addressfield,
+.urlbar-input {
+    background-color: {{colors.surface.default.hex}} !important;
+    color: var(--colorFg) !important;
+    border: 1px solid {{colors.outline.default.hex}} !important;
+}
+
+.button-toolbar:hover,
+.ToolbarButton-Button:hover,
+.toolbar-button:hover {
+    background-color: var(--colorHighlightBg) !important;
+    color: var(--colorHighlightFg) !important;
+}

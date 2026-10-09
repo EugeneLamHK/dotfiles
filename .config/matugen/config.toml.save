@@ -1,0 +1,9 @@
+[config.wallpaper] command = "awww" set = true
+[templates.hyprland] input_path = '/.config/matugen/templates/hyprland-colors.lua' output_path = '/.config/hypr/colors.lua'
+[templates.kitty] input_path = '/.config/matugen/templates/kitty-colors.conf' output_path = '/.config/kitty/colors.conf'
+[templates.rmpc] input_path = '/.config/matugen/templates/rmpc-theme.ron' output_path = "/.config/rmpc/themes/custom.ron"
+[templates.alacritty] input_path = '/.config/matugen/templates/alacritty-colors.toml' output_path = '/.config/alacritty/colors.toml'
+[templates.ghostty] input_path = '/.config/matugen/templates/ghostty-colors' output_path = '/.config/ghostty/colors'
+[templates.rofi] input_path = '/.config/matugen/templates/rofi-theme.rasi' output_path = '/.config/rofi/theme.rasi'
+[templates.sddm] input_path = '~/.config/matugen/sddm.qml' output_path = '/usr/share/sddm/themes/reactive/Matugen.qml' post_hook = "cp {{image}} /usr/share/sddm/themes/reactive/assets/background"
+[templates.quickshell] input_path = "/.config/matugen/templates/qs_colors.json.template" output_path = "/.config/hypr/scripts/quickshell/qs_colors.json"

@@ -1,0 +1,126 @@
+// rmpc theme configuration - Ado style layout (Matugen Template)
+#![enable(implicit_some)]
+#![enable(unwrap_newtypes)]
+#![enable(unwrap_variant_newtypes)]
+
+(
+    default_album_art_path: None,
+    format_tag_separator: " | ",
+    browser_column_widths: [20, 38, 42],
+    background_color: None,
+    text_color: None,
+    header_background_color: None,
+    modal_background_color: None,
+    modal_backdrop: false,
+    // Mapped 'yellow' to Tertiary color
+    preview_label_style: (fg: "{{colors.tertiary.default.hex}}"),
+    preview_metadata_group_style: (fg: "{{colors.tertiary.default.hex}}", modifiers: "Bold"),
+    // Mapped 'blue' to Primary color
+    highlighted_item_style: (fg: "{{colors.primary.default.hex}}", modifiers: "Bold"),
+    current_item_style: (fg: "{{colors.on_primary.default.hex}}", bg: "{{colors.primary.default.hex}}", modifiers: "Bold"),
+    borders_style: (fg: "{{colors.primary.default.hex}}"),
+    highlight_border_style: (fg: "{{colors.primary.default.hex}}"),
+    symbols: (
+        song: "S", dir: "D", playlist: "P", marker: "M", ellipsis: "...",
+        song_style: None, dir_style: None, playlist_style: None,
+    ),
+    level_styles: (
+        info: (fg: "{{colors.primary.default.hex}}", bg: "{{colors.surface.default.hex}}"),
+        warn: (fg: "{{colors.tertiary.default.hex}}", bg: "{{colors.surface.default.hex}}"),
+        error: (fg: "{{colors.error.default.hex}}", bg: "{{colors.surface.default.hex}}"),
+        debug: (fg: "{{colors.secondary.default.hex}}", bg: "{{colors.surface.default.hex}}"),
+        trace: (fg: "{{colors.tertiary.default.hex}}", bg: "{{colors.surface.default.hex}}"),
+    ),
+    progress_bar: (
+        symbols: ["─", "─", "●", "─", "─"],
+        track_style: None,
+        // Mapped 'cyan' to Secondary color
+        elapsed_style: (fg: "{{colors.secondary.default.hex}}"),
+        thumb_style: (fg: "{{colors.secondary.default.hex}}"),
+    ),
+    scrollbar: (
+        symbols: ["│", "█", "▲", "▼"],
+        track_style: (), ends_style: (),
+        thumb_style: (fg: "{{colors.primary.default.hex}}"),
+    ),
+    tab_bar: (
+        active_style: (fg: "{{colors.on_primary.default.hex}}", bg: "{{colors.primary.default.hex}}", modifiers: "Bold"),
+        inactive_style: (),
+    ),
+    lyrics: (timestamp: false),
+    browser_song_format: [
+        (kind: Group([(kind: Property(Track)), (kind: Text(" "))])),
+        (kind: Group([(kind: Property(Artist)), (kind: Text(" - ")), (kind: Property(Title))]), default: (kind: Property(Filename))),
+    ],
+    song_table_format: [
+        (prop: (kind: Property(Track), default: (kind: Text("-"))), label_prop: (kind: Text("#")), width: "5%", alignment: Right),
+        (prop: (kind: Property(Title), default: (kind: Text("Unknown"))), label_prop: (kind: Text("Title")), width: "40%"),
+        (prop: (kind: Property(Artist), style: (fg: "{{colors.tertiary.default.hex}}"), default: (kind: Text("Unknown"), style: (fg: "{{colors.tertiary.default.hex}}"))), label_prop: (kind: Text("Artist")), width: "35%"),
+        (prop: (kind: Property(Duration), style: (fg: "{{colors.secondary.default.hex}}"), default: (kind: Text("-"))), label_prop: (kind: Text("Duration")), width: "20%", alignment: Right),
+    ],
+    // Main Layout - Ado style with album art aligned to track 2
+    layout: Split(
+        direction: Vertical,
+        panes: [
+            (
+                size: "2",
+                borders: "LEFT | RIGHT | BOTTOM",
+                pane: Pane(Tabs),
+            ),
+            (
+                pane: Split(
+                    direction: Horizontal,
+                    panes: [
+                        (
+                            size: "40%",
+                            borders: "ALL",
+                            pane: Pane(TabContent),
+                        ),
+                        (
+                            size: "100%",
+                            borders: "ALL",
+                            pane: Split(
+                                direction: Vertical,
+                                panes: [
+                                    (
+                                        size: "1",
+                                        borders: "NONE",
+                                        pane: Pane(Empty()),
+                                    ),
+                                    (
+                                        size: "100%",
+                                        borders: "NONE",
+                                        pane: Pane(AlbumArt),
+                                    ),
+                                    (
+                                        size: "4",
+                                        borders: "NONE",
+                                        pane: Component("now_playing_info"),
+                                    ),
+                                ]
+                            ),
+                        ),
+                    ]
+                ),
+                size: "100%",
+            ),
+            (
+                size: "1",
+                pane: Pane(ProgressBar),
+            ),
+        ],
+    ),
+    components: {
+        "now_playing_info": Pane(Property(
+            content: [
+                (kind: Text("Now Playing"), style: (fg: "{{colors.tertiary.default.hex}}")),
+                (kind: Text("  ")),
+                (kind: Property(Song(Title)), style: (modifiers: "Bold"), default: (kind: Text("Unknown"), style: (modifiers: "Bold"))),
+                (kind: Text("  ")),
+                (kind: Property(Song(Artist)), style: (fg: "{{colors.tertiary.default.hex}}"), default: (kind: Text("Unknown"), style: (fg: "{{colors.tertiary.default.hex}}"))),
+                (kind: Text(" - ")),
+                (kind: Property(Song(Album)), style: (fg: "{{colors.secondary.default.hex}}"), default: (kind: Text("Unknown Album"), style: (fg: "{{colors.secondary.default.hex}}"))),
+            ], align: Center, scroll_speed: 1
+        )),
+    },
+)

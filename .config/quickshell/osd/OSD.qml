@@ -1,256 +1,99 @@
-// Volume & Brightness OSD — Persona-style rounded bar popups
-// Adapted from https://github.com/Yujonpradhananga/Persona-Quickshell
-
+// osd/OSD.qml — on-screen display for volume changes (PipeWire, event-driven).
 import Quickshell
-import Quickshell.Io
-import Quickshell.Wayland
 import Quickshell.Services.Pipewire
 import QtQuick
-import QtQuick.Layouts
+import "root:/" as Root
 
 Scope {
     id: root
 
-    // ===== OSD Colors (clean transparent + white) =====
-    // Bar background: semi-transparent dark, no color tint
-    readonly property color osdBarBg: "#CC1a1b26"
-    // Track background: faint white
-    readonly property color osdTrackBg: "#33415c"
-    // Fill: white
-    readonly property color osdFill: "#ffffff"
-    // Text & icon: white
-    readonly property color osdText: "#ffffff"
-    readonly property color osdIcon: "#ffffff"
-    readonly property string osdFont: "JetBrainsMono Nerd Font"
-
-    // ===== OSD Size (40% smaller than original) =====
-    readonly property int osdWidth: 330
-    readonly property int osdHeight: 30
-
-    // ===== Volume State =====
-    property bool showVolume: false
-    property real volumeValue: 0
-    property bool volumeMuted: false
-
-    // ===== Brightness State =====
-    property bool showBrightness: false
-    property int brightnessPercent: 0
-    property int _brightnessCurrent: -1
-    property int _brightnessMax: 1
-    property bool _brightnessInitialized: false
-    property string backlightDevice: ""
-
-    // ===== Pipewire Volume Tracking =====
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink]
     }
 
+    property real lastVolume: -1
+
     Connections {
-        target: Pipewire.defaultAudioSink?.audio ?? null
-        enabled: target !== null
-
+        target: Pipewire.defaultAudioSink ? Pipewire.defaultAudioSink.audio : null
         function onVolumeChanged() {
-            root.volumeValue = Pipewire.defaultAudioSink.audio.volume;
-            root.showVolume = true;
-            volumeHideTimer.restart();
+            const v = Pipewire.defaultAudioSink.audio.volume;
+            if (root.lastVolume >= 0 && Math.abs(v - root.lastVolume) > 0.001) {
+                root.lastVolume = v;
+                win.visible = true;
+                hideTimer.restart();
+            } else {
+                root.lastVolume = v;
+            }
         }
-
         function onMutedChanged() {
-            root.volumeMuted = Pipewire.defaultAudioSink.audio.muted;
-            root.showVolume = true;
-            volumeHideTimer.restart();
+            win.visible = true;
+            hideTimer.restart();
         }
     }
 
     Timer {
-        id: volumeHideTimer
-        interval: 1000
-        onTriggered: root.showVolume = false
+        id: hideTimer
+        interval: 1500
+        onTriggered: win.visible = false
     }
 
-    // ===== Brightness Tracking (sysfs polling) =====
-    Process {
-        id: findBacklight
-        command: ["sh", "-c", "ls /sys/class/backlight | head -n 1"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => {
-                let device = data.trim();
-                if (device) {
-                    root.backlightDevice = device;
-                }
-            }
+    PanelWindow {
+        id: win
+        visible: false
+        anchors {
+            bottom: true
         }
-    }
-
-    Timer {
-        id: brightnessPollTimer
-        interval: 100
-        running: root.backlightDevice !== ""
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            brightnessCurrentFile.reload();
-            brightnessMaxFile.reload();
+        margins {
+            bottom: 60
         }
-    }
-
-    FileView {
-        id: brightnessCurrentFile
-        path: root.backlightDevice
-            ? "/sys/class/backlight/" + root.backlightDevice + "/brightness"
-            : ""
-        onLoaded: {
-            var val = parseInt(text().trim());
-            if (isNaN(val))
-                return;
-            if (root._brightnessCurrent !== val) {
-                if (root._brightnessInitialized && root._brightnessCurrent !== -1) {
-                    root.showBrightness = true;
-                    brightnessHideTimer.restart();
-                }
-                root._brightnessCurrent = val;
-                root._updateBrightnessPercent();
-                root._brightnessInitialized = true;
-            }
-        }
-    }
-
-    FileView {
-        id: brightnessMaxFile
-        path: root.backlightDevice
-            ? "/sys/class/backlight/" + root.backlightDevice + "/max_brightness"
-            : ""
-        onLoaded: {
-            var val = parseInt(text().trim());
-            if (!isNaN(val)) {
-                root._brightnessMax = val;
-                root._updateBrightnessPercent();
-            }
-        }
-    }
-
-    function _updateBrightnessPercent() {
-        if (root._brightnessMax > 0 && root._brightnessCurrent >= 0) {
-            root.brightnessPercent = Math.round(
-                (root._brightnessCurrent / root._brightnessMax) * 100
-            );
-        }
-    }
-
-    Timer {
-        id: brightnessHideTimer
-        interval: 1000
-        onTriggered: root.showBrightness = false
-    }
-
-    // ===== Shared OSD Bar Component =====
-    component OsdBar: PanelWindow {
-        id: barRoot
-        property alias iconText: iconLabel.text
-        property alias percentText: percentLabel.text
-        property real fillRatio: 0
-
-        anchors.top: true
-        margins.top: screen.height / 9
-        exclusiveZone: 0
-        WlrLayershell.layer: WlrLayer.Overlay
-
-        implicitWidth: root.osdWidth
-        implicitHeight: root.osdHeight
+        implicitWidth: 240
+        implicitHeight: 56
         color: "transparent"
+        exclusiveZone: 0
         mask: Region {}
 
-        // Pill-shaped bar — semi-transparent blue (Persona style)
         Rectangle {
             anchors.fill: parent
-            radius: height / 2
-            color: root.osdBarBg
+            radius: 20
+            color: Root.Colors.barBackground
 
-            RowLayout {
-                anchors {
-                    fill: parent
-                    leftMargin: 10
-                    rightMargin: 10
-                }
-                spacing: 8
+            Row {
+                anchors.centerIn: parent
+                spacing: 10
 
-                // Icon — literal Nerd Font characters (NOT \u escapes)
                 Text {
-                    id: iconLabel
-                    color: root.osdIcon
-                    font.pixelSize: 14
-                    font.family: root.osdFont
-                    Layout.alignment: Qt.AlignVCenter
+                    readonly property var audio: Pipewire.defaultAudioSink
+                        ? Pipewire.defaultAudioSink.audio : null
+                    text: (audio && audio.muted) ? "\uf6a9" : "\uf028"
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 15
+                    color: (audio && audio.muted) ? Root.Colors.danger : Root.Colors.accent
+                    anchors.verticalCenter: parent.verticalCenter
                 }
 
-                // Progress track — lighter blue
                 Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: 6
-                    radius: 20
-                    color: root.osdTrackBg
+                    width: 150
+                    height: 8
+                    radius: 4
+                    color: Qt.rgba(Root.Colors.text.r, Root.Colors.text.g, Root.Colors.text.b, 0.15)
+                    anchors.verticalCenter: parent.verticalCenter
 
-                    // Filled portion — white (Persona style)
                     Rectangle {
+                        readonly property real vol: {
+                            const s = Pipewire.defaultAudioSink;
+                            return (s && s.audio) ? Math.min(s.audio.volume, 1.0) : 0;
+                        }
                         anchors {
                             left: parent.left
                             top: parent.top
                             bottom: parent.bottom
                         }
-                        implicitWidth: parent.width * barRoot.fillRatio
-                        radius: parent.radius
-                        color: root.osdFill
+                        width: vol * parent.width
+                        radius: 4
+                        color: Root.Colors.accent
                     }
                 }
-
-                // Percentage
-                Text {
-                    id: percentLabel
-                    color: root.osdText
-                    font.pixelSize: 12
-                    font.family: root.osdFont
-                    font.weight: Font.Bold
-                    Layout.minimumWidth: 38
-                    horizontalAlignment: Text.AlignRight
-                    Layout.alignment: Qt.AlignVCenter
-                }
             }
-        }
-    }
-
-    // ===== Volume OSD Instance =====
-    // Icons use literal UTF-8 characters — \u escapes break for Nerd Fonts
-    LazyLoader {
-        active: root.showVolume
-
-        OsdBar {
-            iconText: {
-                var vol = Math.round(root.volumeValue * 100);
-                if (root.volumeMuted || vol === 0) return "󰖁";
-                if (vol < 30)                         return "󰕿";
-                if (vol < 70)                         return "󰖀";
-                                                      return "󰕾";
-            }
-            percentText: Math.round(root.volumeValue * 100) + "%"
-            fillRatio: root.volumeValue
-        }
-    }
-
-    // ===== Brightness OSD Instance =====
-    LazyLoader {
-        active: root.showBrightness
-
-        OsdBar {
-            iconText: {
-                if (root.brightnessPercent === 0)     return "󰃞";
-                if (root.brightnessPercent < 30)      return "󰃟";
-                if (root.brightnessPercent < 60)      return "󰃠";
-                if (root.brightnessPercent < 85)      return "󰃡";
-                                                      return "󰃢";
-            }
-            percentText: root.brightnessPercent + "%"
-            fillRatio: root.brightnessPercent / 100
         }
     }
 }

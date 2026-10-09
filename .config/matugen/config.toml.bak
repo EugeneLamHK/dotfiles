@@ -1,0 +1,33 @@
+[config]
+
+[templates.alacritty]
+type = "scheme-content"
+input_path = '~/.config/matugen/templates/alacritty-colors.toml'
+output_path = '~/.config/alacritty/colors.toml'
+
+[templates.hyprland]
+type = "scheme-content"
+input_path = '~/.config/matugen/templates/hyprland-colors.conf'
+output_path = '~/.config/hypr/colors.conf'
+post_hook = 'hyprctl reload 2>/dev/null || true'
+
+[templates.rofi]
+type = "scheme-content"
+input_path = '~/.config/matugen/templates/rofi-theme.rasi'
+output_path = '~/.config/rofi/theme.rasi'
+
+[templates.yazi]
+type = "scheme-content"
+input_path = '~/.config/matugen/templates/yazi-theme.toml'
+output_path = '~/.config/yazi/theme.toml'
+
+[templates.kitty]
+type = "scheme-content"
+input_path = '~/.config/matugen/templates/kitty-colors.conf'
+output_path = '~/.config/kitty/colors.conf'
+post_hook = 'kitty @ --to unix:/tmp/kitty-socket set-colors -a ~/.config/kitty/colors.conf 2>/dev/null || true'
+
+[templates.rmpc]
+type = "scheme-content"
+input_path = '~/.config/matugen/templates/rmpc-theme.ron'
+output_path = '~/.config/rmpc/themes/custom.ron'
